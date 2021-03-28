@@ -5,7 +5,12 @@
 <h3>Exportar</h3>
 
 <p>Digiste el Id que desee exportar <input type="number" @bind-value="id"> <button class="btn btn-secondary" @onclick="exportar">Exportar</button></p>
+@if (exportado)
+{
+    <p class="alert alert-success">El documento ha sido exportado</p>
+}
 <table class="table table-striped">
+
     <thead>
     <th>Id</th>
     <th>Nombre</th>
@@ -37,6 +42,7 @@
     registro_robosContext db;
     List<Dictionary<string, string>> datos;
     string ruta = "C:\\Users\\einst\\source\\repos\\RegistroRoboSegundoParcial\\Exportados\\";
+    Boolean exportado = false;
 
 
     void buscarRobos()
@@ -78,6 +84,7 @@
             Directory.CreateDirectory(ruta);
         }
 
+
         db = new registro_robosContext();
         var result = db.Robo.SingleOrDefault(b => b.Id == id);
 
@@ -97,7 +104,8 @@
         "</body></html >";
 
         File.WriteAllText(ruta + result.Nombre + ".html", contenido);
-        Console.ReadKey();
+        exportado = true;
+
 
     }
 

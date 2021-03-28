@@ -13,7 +13,7 @@
 {
     @if (editado)
     {
-        <p class="alert-success">El robo a sido editado</p>
+        <p class="alert alert-success">El robo a sido editado</p>
     }
     <p>Cedula: <input type="text" @bind-value="cedulaadquirida" /></p>
     <p>Objeto Robado<input type="text" @bind-value="Producto" /></p>
@@ -66,7 +66,7 @@
     }
     void ValidarCedula()
     {
-        if (cedula.Length != 11)
+        if (cedulaadquirida.Length != 11)
         {
             validacion = "La cedula no es Dominicana";
         }
@@ -126,7 +126,7 @@
 
         try
         {
-            var cedual = Int64.Parse(cedula);
+            var cedual = Int64.Parse(cedulaadquirida);
         }
         catch (FormatException e)
         {
@@ -134,7 +134,7 @@
             return;
         }
 
-        api = link + cedula;
+        api = link + cedulaadquirida;
 
         json = new WebClient().DownloadString(api);
 
