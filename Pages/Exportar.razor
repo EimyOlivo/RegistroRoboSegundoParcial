@@ -1,0 +1,108 @@
+﻿@page "/exportar"
+
+@using Models;
+@using System.IO;
+<h3>Exportar</h3>
+
+<p>Digiste el Id que desee exportar <input type="number" @bind-value="id"> <button class="btn btn-secondary" @onclick="exportar">Exportar</button></p>
+<table class="table table-striped">
+    <thead>
+    <th>Id</th>
+    <th>Nombre</th>
+    <th>Cedula</th>
+    <th>Fecha de robo</th>
+    <th>Producto Robado</th>
+    <th>Valor del producto</th>
+    <th>Lugar del robo</th>
+    </thead>
+    <tbody>
+        @foreach (Dictionary<string, string> row in datos)
+        {
+            <tr>
+                <td>@row["id"]</td>
+                <td>@row["nombre"]</td>
+                <td>@row["cedula"]</td>
+                <td>@row["fecha"]</td>
+                <td>@row["producto"]</td>
+                <td>@row["valor"]</td>
+                <td>@row["lugar"]</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+
+@code {
+    int id;
+    registro_robosContext db;
+    List<Dictionary<string, string>> datos;
+    string ruta = "C:\\Users\\einst\\source\\repos\\RegistroRoboSegundoParcial\\Exportados\\";
+
+
+    void buscarRobos()
+    {
+        db = new registro_robosContext();
+        datos = new List<Dictionary<string, string>>();
+        var query = from r in db.Robo
+                    select new
+                    {
+                        id = r.Id,
+                        nombre = r.Nombre,
+                        cedula = r.Cedula,
+                        objeto = r.ProductoRobado,
+                        valor = r.ValorProducto,
+                        lugar = r.Lugar,
+                        fecha = r.Fecha
+
+                    };
+        foreach (var i in query)
+        {
+            var dic = new Dictionary<string, string>();
+
+            dic.Add("id", i.id.ToString());
+            dic.Add("nombre", i.nombre);
+            dic.Add("producto", i.objeto);
+            dic.Add("cedula", i.cedula);
+            dic.Add("valor", i.valor.ToString());
+            dic.Add("lugar", i.lugar);
+            dic.Add("fecha", i.fecha);
+            datos.Add(dic);
+        }
+
+    }
+
+    void exportar()
+    {
+        if (Directory.Exists(ruta) == false)
+        {
+            Directory.CreateDirectory(ruta);
+        }
+
+        db = new registro_robosContext();
+        var result = db.Robo.SingleOrDefault(b => b.Id == id);
+
+        string contenido = "<html>" +
+        "<head></head>" +
+        "<body style='background: lightblue'>" +
+        "<h1 style='text-align: center'>" + result.Nombre + "</h1>" +
+        "<br>" +
+        "<h2>cedula: " + result.Cedula + "</h2>" +
+        "<h2>Fecha del robo: " + result.Fecha + "</h2>" +
+        "<h2>Lugar del robo: " + result.Lugar + "</h2>" +
+        "<h2>Latitud: " + result.Latitud + "</h2>" +
+        "<h2>Longitud: " + result.Longitud + "</h2>" +
+        "<h2>Producto robado: " + result.ProductoRobado + "</h2>" +
+        "<h2>valor del producto robado: " + result.ValorProducto + "</h2>" +
+        "<h2>Producto robado: " + result.ProductoRobado + "</h2>" +
+        "</body></html >";
+
+        File.WriteAllText(ruta + result.Nombre + ".html", contenido);
+        Console.ReadKey();
+
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        buscarRobos();
+    }
+}

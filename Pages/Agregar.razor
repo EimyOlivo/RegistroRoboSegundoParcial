@@ -1,0 +1,156 @@
+﻿@page "/agregar"
+
+@using System;
+@using System.Net;
+@using Models;
+@using Data;
+@using Newtonsoft.Json;
+
+<h1>Agregar Robo</h1>
+<br />
+<br />
+
+@if (agregado)
+{
+    <p class="alert-success">El robo a sido agregado</p>
+}
+<p>Digite su cedula <input type="text" @bind-value="@cedula" /></p>
+<p>Fecha del robo: <input type="text" @bind-value="@fecha" placeholder="26/03/2021"/></p>
+<p>Que le robaron: <input type="text" @bind-value="@objetoRobado" /></p>
+<p>Cuanto vale el objeto robado: <input type="number" @bind-value="@valorRobado" /></p>
+<p>Donde ocurrio: <input type="text" @bind-value="@lugar" /></p>
+<p>Latitud: <input type="text" @bind-value="lat" /> Longitud: <input type="text" @bind-value="lon" /></p>
+<button class="btn btn-success" @onclick="ValidarCedula">Agregar</button>
+
+
+
+@code {
+    string cedula;
+    string fecha;
+    string objetoRobado;
+    string lugar;
+    int valorRobado;
+    string lat;
+    string lon;
+    string dato;
+    string link = "https://api.adamix.net/apec/cedula/";
+    string api;
+    string json;
+    string nombre = "";
+    string validacion;
+    int producto;
+    int numeroValidacion;
+    string subCedula;
+    int numCedula;
+    int multiplicacion;
+    int sumatotal;
+    int[] constante = { 1, 2, 1, 2, 1, 2, 1, 2, 1, 2 };
+    CedulaApiResponse res;
+    registro_robosContext db;
+    Robo robo;
+
+    Boolean agregado = false;
+
+
+    void ValidarCedula()
+    {
+        if (cedula.Length != 11)
+        {
+            validacion = "La cedula no es Dominicana";
+        }
+        else
+        {
+            try
+            {
+                var cedual = Int64.Parse(cedula);
+            }
+            catch (FormatException e)
+            {
+                validacion = "Las cedulas solo poseen numeros";
+                return;
+            }
+
+
+            numeroValidacion = Int32.Parse(cedula.Substring(10));
+            subCedula = cedula.Substring(0, 10);
+
+            for (int i = 0; i < subCedula.Length; i++)
+            {
+
+                numCedula = (int)Char.GetNumericValue(subCedula[i]);
+                multiplicacion = numCedula * constante[i];
+                dato = multiplicacion.ToString();
+
+                int listaSuma = 0;
+
+
+                for (int num = 0; num < dato.Length; num++)
+                {
+                    listaSuma += (int)Char.GetNumericValue(dato[num]);
+
+
+                }
+                sumatotal += listaSuma;
+
+            }
+
+            int residuo = sumatotal % 10;
+            int numeroValidar = 10 - residuo;
+
+            if (numeroValidar == numeroValidacion)
+            {
+                validacion = "Esta cedula es dominicana";
+                readApi();
+            }
+            else
+            {
+                validacion = "Esta cedula no es dominicana";
+            }
+        }
+    }
+
+    void readApi()
+    {
+
+        try
+        {
+            var cedual = Int64.Parse(cedula);
+        }
+        catch (FormatException e)
+        {
+
+            return;
+        }
+
+        api = link + cedula;
+
+        json = new WebClient().DownloadString(api);
+
+        res = JsonConvert.DeserializeObject<CedulaApiResponse>(json);
+
+        nombre = res.Nombres + " " + res.Apellido1 + " " + res.Apellido2;
+
+        agregar();
+    }
+
+    void agregar()
+    {
+        db = new registro_robosContext();
+        robo = new Robo();
+
+        robo.Cedula = cedula;
+        robo.Nombre = nombre;
+        robo.Fecha = fecha;
+        robo.Lugar = lugar;
+        robo.ProductoRobado = objetoRobado;
+        robo.ValorProducto = valorRobado;
+        robo.Latitud = lat;
+        robo.Longitud = lon;
+
+        db.Add(robo);
+        db.SaveChanges();
+        agregado = true;
+    }
+
+}
+

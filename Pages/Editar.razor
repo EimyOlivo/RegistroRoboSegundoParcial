@@ -1,0 +1,163 @@
+﻿@page "/editar"
+
+@using Models;
+@using Data;
+@using Newtonsoft.Json;
+@using System;
+@using System.Net;
+
+
+<p> Digite la cedula de la persona que desea editar <input type="text" @bind-value="cedula" /> <button class="btn btn-secondary" @onclick="BuscarRobo">Buscar</button></p>
+
+@if (cedulaadquirida != "")
+{
+    @if (editado)
+    {
+        <p class="alert-success">El robo a sido editado</p>
+    }
+    <p>Cedula: <input type="text" @bind-value="cedulaadquirida" /></p>
+    <p>Objeto Robado<input type="text" @bind-value="Producto" /></p>
+    <p>Valor del objeto<input type="text" @bind-value="valor" /></p>
+    <p>Lugar del echo<input type="text" @bind-value="lugar" /></p>
+    <p>Fecha del robo<input type="text" @bind-value="fecha" /></p>
+    <p>Latitud: <input type="text" @bind-value="lat" /> Longitud: <input type="text" @bind-value="lon" /></p>
+    <button class="btn btn-success" @onclick="ValidarCedula">Editar</button>
+}
+
+@code {
+    string cedula;
+    registro_robosContext db;
+    Robo result;
+    string nombre = "";
+    string fecha;
+    string lugar;
+    string cedulaadquirida = "";
+    string lon;
+    string lat;
+    string Producto;
+    int valor;
+    Boolean editado = false;
+    string dato;
+    string link = "https://api.adamix.net/apec/cedula/";
+    string api;
+    string json;
+    string validacion;
+    int producto;
+    int numeroValidacion;
+    string subCedula;
+    int numCedula;
+    int multiplicacion;
+    int sumatotal;
+    int[] constante = { 1, 2, 1, 2, 1, 2, 1, 2, 1, 2 };
+    CedulaApiResponse res;
+
+    void BuscarRobo()
+    {
+        db = new registro_robosContext();
+        result = db.Robo.SingleOrDefault(b => b.Cedula == cedula);
+        fecha = result.Fecha;
+        lugar = result.Lugar;
+        cedulaadquirida = result.Cedula;
+        lon = result.Longitud;
+        lat = result.Latitud;
+        Producto = result.ProductoRobado;
+        valor = result.ValorProducto;
+
+    }
+    void ValidarCedula()
+    {
+        if (cedula.Length != 11)
+        {
+            validacion = "La cedula no es Dominicana";
+        }
+        else
+        {
+            try
+            {
+                var cedual = Int64.Parse(cedula);
+            }
+            catch (FormatException e)
+            {
+                validacion = "Las cedulas solo poseen numeros";
+                return;
+            }
+
+
+            numeroValidacion = Int32.Parse(cedula.Substring(10));
+            subCedula = cedula.Substring(0, 10);
+
+            for (int i = 0; i < subCedula.Length; i++)
+            {
+
+                numCedula = (int)Char.GetNumericValue(subCedula[i]);
+                multiplicacion = numCedula * constante[i];
+                dato = multiplicacion.ToString();
+
+                int listaSuma = 0;
+
+
+                for (int num = 0; num < dato.Length; num++)
+                {
+                    listaSuma += (int)Char.GetNumericValue(dato[num]);
+
+
+                }
+                sumatotal += listaSuma;
+
+            }
+
+            int residuo = sumatotal % 10;
+            int numeroValidar = 10 - residuo;
+
+            if (numeroValidar == numeroValidacion)
+            {
+                validacion = "Esta cedula es dominicana";
+                readApi();
+            }
+            else
+            {
+                validacion = "Esta cedula no es dominicana";
+            }
+        }
+    }
+
+    void readApi()
+    {
+
+        try
+        {
+            var cedual = Int64.Parse(cedula);
+        }
+        catch (FormatException e)
+        {
+
+            return;
+        }
+
+        api = link + cedula;
+
+        json = new WebClient().DownloadString(api);
+
+        res = JsonConvert.DeserializeObject<CedulaApiResponse>(json);
+
+        nombre = res.Nombres + " " + res.Apellido1 + " " + res.Apellido2;
+
+        editar();
+    }
+
+    void editar()
+    {
+
+        result.Nombre = nombre;
+        result.Cedula = cedulaadquirida;
+        result.Fecha = fecha;
+        result.Lugar = lugar;
+        result.Latitud = lat;
+        result.Longitud = lon;
+        result.ProductoRobado = Producto;
+        result.ValorProducto = valor;
+        db.SaveChanges();
+        editado = true;
+
+    }
+}

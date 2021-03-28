@@ -1,0 +1,136 @@
+﻿@page "/maps"
+@using Models;
+<h3>Maps</h3>
+
+@if (show)
+{
+    <div class="modal" tabindex="-1" style="display:block;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@modalDatos["id"] - @modalDatos["nombre"]</h5>
+                </div>
+                <div class="modal-body">
+                    <h3>cedula: @modalDatos["cedula"]</h3>
+                    <h4>Fecha: @modalDatos["fecha"]</h4>
+                    <p>lugar: @modalDatos["lugar"]</p>
+                    <p>Porducto robado: @modalDatos["producto"]</p>
+                    <p>Valor del objeto robado: @modalDatos["valor"]</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="close">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<div class="row">
+    <div class="col-xl-6">
+        <RadzenGoogleMap style="height: 600px" Zoom=@zoom Center=@(new GoogleMapPosition() { Lat = 18.512496187844594, Lng = -69.90812689186842 }) MapClick=@OnMapClick MarkerClick="@OnMarkerClick">
+            <Markers>
+                @foreach (Dictionary<string, string> diccionario in datos)
+                {
+
+                    <RadzenGoogleMapMarker Title="@diccionario["id"]" Label="@diccionario["nombre"]" Position=@(new GoogleMapPosition() { Lat = Double.Parse(@diccionario["lat"]),  Lng =  Double.Parse(@diccionario["lon"]) }) />
+                }
+            </Markers>
+
+        </RadzenGoogleMap>
+    </div>
+</div>
+
+@code {
+    Boolean show = false;
+    int zoom = 7;
+    string clickedPosition = "";
+    int valor;
+    string test = "";
+
+    Dictionary<string, string> modalDatos;
+    List<Dictionary<string, string>> datos = null;
+    registro_robosContext db = new registro_robosContext();
+
+    void OnMapClick(GoogleMapClickEventArgs args)
+    {
+        clickedPosition = $"Map clicked LAT: {args.Position.Lat}, LNG : {args.Position.Lng}";
+    }
+
+    void OnMarkerClick(RadzenGoogleMapMarker args)
+    {
+
+        test = args.Title;
+        card(test);
+    }
+
+    void user()
+    {
+        datos = new List<Dictionary<string, string>>();
+
+        var query = from c in db.Robo
+                    select new
+                    {
+                        Id = c.Id,
+                        nombre = c.Nombre,
+                        fecha = c.Fecha,
+                        cedula = c.Cedula,
+                        producto = c.ProductoRobado,
+                        valor = c.ValorProducto,
+                        lon = c.Longitud,
+                        lat = c.Latitud
+                    };
+        foreach (var i in query)
+        {
+            var dic = new Dictionary<string, string>();
+            dic.Add("nombre", i.nombre);
+            dic.Add("id", i.Id.ToString());
+            dic.Add("cedula", i.cedula);
+            dic.Add("producto", i.producto);
+            dic.Add("valor", i.valor.ToString());
+            dic.Add("lon", i.lon);
+            dic.Add("lat", i.lat);
+            datos.Add(dic);
+
+        }
+    }
+
+    void card(string id)
+    {
+        modalDatos = new Dictionary<string, string>();
+        var query = from c in db.Robo
+                    where c.Id == Int32.Parse(id)
+                    select new
+                    {
+                        id = c.Id,
+                        nombre = c.Nombre,
+                        cedula = c.Cedula,
+                        producto = c.ProductoRobado,
+                        valor = c.ValorProducto,
+                        fecha = c.Fecha,
+                        lugar = c.Lugar
+                    };
+
+        foreach (var i in query)
+        {
+            modalDatos.Add("id", i.id.ToString());
+            modalDatos.Add("nombre", i.nombre);
+            modalDatos.Add("producto", i.producto);
+            modalDatos.Add("cedula", i.cedula);
+            modalDatos.Add("valor", i.valor.ToString());
+            modalDatos.Add("fecha", i.fecha);
+            modalDatos.Add("lugar", i.lugar);
+
+        }
+        show = true;
+    }
+
+    void close()
+    {
+        show = false;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        user();
+    }
+
+}
